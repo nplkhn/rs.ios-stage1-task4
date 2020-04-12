@@ -2,13 +2,87 @@
 
 @implementation ArrayCalculator
 + (NSInteger)maxProductOf:(NSInteger)numberOfItems itemsFromArray:(NSArray *)array {
-    NSArray* filteredArray = [array filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id  _Nullable evaluatedObject, NSDictionary<NSString *,id> * _Nullable bindings) {
-        return [evaluatedObject isKindOfClass:[NSNumber class]];
-    }]];
-    filteredArray = [filteredArray sortedArrayUsingSelector:@selector(compare:)];
-    NSInteger sum = 0;
+    NSArray *filteredArray = [NSArray arrayWithArray:[self filterArray:array]];
+    int product = 1;
+    if (!filteredArray.count) {
+        return 0;
+    } else if (numberOfItems >= filteredArray.count) {
+        for (int i = 0; i < filteredArray.count; i++) {
+            product *= [filteredArray[i] intValue];
+        }
+        return product;
+    }
     
-    // good luck
-    return -1;
+    NSMutableArray *positiveArray = [NSMutableArray arrayWithArray:[self separatePositiveNumbers:YES fromArray:filteredArray]];
+    NSMutableArray *negativeArray = [NSMutableArray arrayWithArray:[self separatePositiveNumbers:NO fromArray:filteredArray]];
+    [positiveArray sortUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"self" ascending:NO]]];
+    [negativeArray sortUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"self" ascending:YES]]];
+    
+    int maxProduct = INT_MIN;
+    for (int searches = 0; searches < floor(numberOfItems/2); searches++) {
+        product = 1;
+        product *= [self searchForNegativeNumbersFrom:negativeArray thatGreaterThan:[positiveArray[searches*2 + 1] intValue]];
+        product *= [self productOfNumber:numberOfItems - searches*2 elementsOfArray:positiveArray];
+        if (product > maxProduct) {
+            maxProduct = product;
+        }
+    }
+    return maxProduct;
 }
+
++ (NSArray*)filterArray:(NSArray*)array {
+    NSMutableArray *result = [NSMutableArray new];
+    [array enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj isKindOfClass:[NSNumber class]]) {
+            [result addObject:obj];
+        }
+    }];
+    return result;
+}
+
++ (NSArray*)separatePositiveNumbers:(BOOL)isPositive fromArray:(NSArray*)array {
+    NSMutableArray *filteredArray = [NSMutableArray new];
+    if (isPositive) {
+        [array enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([obj intValue] >= 0) {
+                [filteredArray addObject:obj];
+            }
+        }];
+    } else {
+        [array enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([obj intValue] < 0) {
+                [filteredArray addObject:obj];
+            }
+        }];
+    }
+    return filteredArray;
+}
+
++ (NSInteger)searchForNegativeNumbersFrom:(NSArray*)array thatGreaterThan:(NSInteger)number {
+    NSMutableArray *negativeNumbers = [NSMutableArray new];
+    [array enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (abs([obj intValue]) >= number) {
+            [negativeNumbers addObject:obj];
+        }
+    }];
+    if (negativeNumbers.count % 2 != 0) {
+        [negativeNumbers removeLastObject];
+    }
+    int product = 1;
+    for (int i = 0; i < negativeNumbers.count; i++) {
+        product *= [negativeNumbers[i] intValue];
+    }
+    return product;
+}
+
++ (NSInteger)productOfNumber:(NSInteger)number elementsOfArray:(NSArray*)array {
+    __block int product = 1;
+    [array enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (idx + 1 <= number) {
+            product *= [obj intValue];
+        }
+    }];
+    return product;
+}
+
 @end
