@@ -68,10 +68,10 @@
     if (negativeNumbers.count % 2 != 0) {
         [negativeNumbers removeLastObject];
     }
-    int product = 1;
-    for (int i = 0; i < negativeNumbers.count; i++) {
-        product *= [negativeNumbers[i] intValue];
-    }
+    __block int product = 1;
+    [negativeNumbers enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        product *= [obj intValue];
+    }];
     return product;
 }
 
